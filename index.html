@@ -31,12 +31,11 @@
     <!-- End Google Tag Manager -->
 
 
-<script>
-  window.addEventListener("CookiebotOnDialogInit", function() {
-    if (Cookiebot.getDomainUrlParam("param") === "true")
-      Cookiebot.hide();
-  });
-</script>
+<script>!function(w,d,C,l,r) {
+let a=c=>/CookieConsent/.test(c),c=C in w?w[C].consented:a(d.cookie),
+n='CookieConsent=0';if(c)return;if(!r.test(l))return;d.cookie=n;w.addEventListener(
+'CookiebotOnConsentReady',()=>{d.cookie.indexOf(n)!=-1&&w[C].deleteConsentCookie()}
+)}(window,document,'Cookiebot', location.href, /mytest3/g)</script>
 </head>
 
 <body>
