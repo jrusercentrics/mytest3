@@ -4,22 +4,21 @@
 <head>
 
     <script>
-
-
-    window.onpageshow = function(event) {
-  if (event.persisted) {  // Detecta se a página foi restaurada do cache
-    window.location.reload();  // Recarrega a página
-  }
-};
-        
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('param') === 'other') {
-        !function(w,d,C,l,r) {
+        window.onload = function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('param') && !sessionStorage.getItem('bannerHidden')) {
+                !function(w,d,C,l,r) {
         let a=c=>/CookieConsent/.test(c),c=C in w?w[C].consented:a(d.cookie),
         n='CookieConsent=0';if(c)return;if(!r.test(l))return;d.cookie=n;w.addEventListener(
         'CookiebotOnConsentReady',()=>{d.cookie.indexOf(n)!=-1&&w[C].deleteConsentCookie()}
         )}(window,document,'Cookiebot', location.href, /mytest3/g)
     }
+            sessionStorage.setItem('bannerHidden', 'true');
+            }
+        
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('param') === 'other') {
+        
     </script>
 
 
