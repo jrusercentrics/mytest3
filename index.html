@@ -4,6 +4,14 @@
 <head>
 
     <script>
+
+
+    window.onpageshow = function(event) {
+  if (event.persisted) {  // Detecta se a página foi restaurada do cache
+    window.location.reload();  // Recarrega a página
+  }
+};
+        
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('param') === 'other') {
         !function(w,d,C,l,r) {
