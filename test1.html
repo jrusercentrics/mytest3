@@ -33,7 +33,7 @@
 
     <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="e2769309-3672-42d4-bc3f-d56333e6a880" data-blockingmode="auto" type="text/javascript"></script>
     <script>
-    if(sessionStorage.setItem('bannerHidden', 'false')) {
+    if(sessionStorage.getItem('bannerHidden') == 'false') {
         Cookiebot.show();
     }
     </script>
