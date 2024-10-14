@@ -10,7 +10,13 @@
 
 <script>
   function goback() {
-    window.history.back();
+		let referrer = document.referrer;
+		if (referrer) {
+			const url = new URL(referrer)
+			window.location.href = url.origin + url.pathname;
+		} else {
+			window.history.back();
+		}
   }
 </script>
   
