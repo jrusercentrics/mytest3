@@ -4,7 +4,6 @@
 <head>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
         if (!sessionStorage.getItem('bannerHidden')) {
             sessionStorage.setItem('bannerHidden', 'false');
         }
@@ -20,7 +19,6 @@
         )}(window,document,'Cookiebot', location.href, /mytest3/g)
             sessionStorage.setItem('bannerHidden', 'true');
             }
-        });
 
     console.log(sessionStorage.getItem('bannerHidden'));
         
