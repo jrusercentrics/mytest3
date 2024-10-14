@@ -19,6 +19,8 @@
         'CookiebotOnConsentReady',()=>{d.cookie.indexOf(n)!=-1&&w[C].deleteConsentCookie()}
         )}(window,document,'Cookiebot', location.href, /mytest3/g)
             sessionStorage.setItem('bannerHidden', 'true');
+            } else {
+                sessionStorage.SetItem('bannerHidden', 'false');
             }
 
     console.log(sessionStorage.getItem('bannerHidden'));
