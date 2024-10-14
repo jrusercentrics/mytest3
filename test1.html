@@ -12,7 +12,7 @@
         console.log(sessionStorage.getItem('bannerHidden'));
             const urlParams = new URLSearchParams(window.location.search);
             
-            if (urlParams.has('param') && sessionStorage.getItem('bannerHidden') != 'true') {
+            if (sessionStorage.getItem('bannerHidden') != 'true') {
                 !function(w,d,C,l,r) {
         let a=c=>/CookieConsent/.test(c),c=C in w?w[C].consented:a(d.cookie),
         n='CookieConsent=0';if(c)return;if(!r.test(l))return;d.cookie=n;w.addEventListener(
