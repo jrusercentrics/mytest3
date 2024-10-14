@@ -5,6 +5,7 @@
 
     <script>
         window.onload = function () {
+        sessionStorage.setItem('bannerHidden', 'false');
         console.log(sessionStorage.getItem('bannerHidden'));
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.has('param') && !sessionStorage.getItem('bannerHidden')) {
