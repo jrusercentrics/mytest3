@@ -290,17 +290,52 @@
           document.getElementById('status-consent').textContent = 'Yes';
           document.getElementById('status-consent').style.color = '#34d399';
 
-          // Get current consent details to use in Step 2
-          const details = await window.__ucCmp.getConsentDetails();
-          consentCategories = details.categories?.map(cat => ({
-            id: cat.categorySlug || cat.id,
-            consent: cat.isConsented || false
-          })) || [];
-          log(`Captured ${consentCategories.length} category consents: ${JSON.stringify(consentCategories)}`, 'info');
+          try {
+            // Get current consent details to use in Step 2
+            const details = await window.__ucCmp.getConsentDetails();
+            log(`getConsentDetails keys: ${JSON.stringify(Object.keys(details))}`, 'info');
+            log(`Raw details (truncated): ${JSON.stringify(details).substring(0, 500)}`, 'info');
 
-          // Enable Step 2
+            // Try multiple possible structures
+            const cats = details.categories || details.categoryConsents || [];
+            if (cats.length > 0) {
+              consentCategories = cats.map(cat => ({
+                id: cat.categorySlug || cat.slug || cat.id || cat.category,
+                consent: cat.isConsented ?? cat.consent ?? false
+              }));
+            } else {
+              // Fallback: try to build from services
+              const services = details.services || details.serviceConsents || [];
+              if (services.length > 0) {
+                log(`No categories found, using services (${services.length})`, 'warn');
+                consentCategories = services.map(svc => ({
+                  id: svc.id || svc.serviceId,
+                  consent: svc.isConsented ?? svc.consent ?? false
+                }));
+              } else {
+                // Last resort: use hardcoded common category slugs
+                log('No categories or services found in details — using fallback categories', 'warn');
+                consentCategories = [
+                  { id: 'marketing', consent: true },
+                  { id: 'functional', consent: true },
+                  { id: 'essential', consent: true }
+                ];
+              }
+            }
+            log(`Captured ${consentCategories.length} consents: ${JSON.stringify(consentCategories)}`, 'info');
+          } catch (err) {
+            log(`Error capturing consent details: ${err.message} — using fallback`, 'error');
+            consentCategories = [
+              { id: 'marketing', consent: true },
+              { id: 'functional', consent: true },
+              { id: 'essential', consent: true }
+            ];
+          }
+
+          // Always enable Step 2
           document.getElementById('btn-step2').disabled = false;
           document.getElementById('btn-step2-update-only').disabled = false;
+          log('Step 2 buttons enabled', 'success');
         }, { once: true });
 
       } catch (err) {
