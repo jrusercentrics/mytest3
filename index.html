@@ -1,20 +1,385 @@
 <!DOCTYPE html>
 <html lang="en">
-    
 <head>
-<script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="c6a01e63-7d42-4bf5-8d40-c21d22f89fb7" data-blockingmode="auto" type="text/javascript"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UC CMP - saveConsents() Analytics Test</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Courier New', monospace;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      padding: 24px;
+      line-height: 1.6;
+    }
+    h1 {
+      font-size: 18px;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 24px;
+    }
+    .panel {
+      background: #141414;
+      border: 1px solid #2a2a2a;
+      border-radius: 6px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .panel-title {
+      font-size: 13px;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+    .step-section {
+      margin-bottom: 20px;
+    }
+    .step-section h3 {
+      font-size: 13px;
+      color: #f59e0b;
+      margin-bottom: 8px;
+    }
+    .step-section p {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 10px;
+    }
+    button {
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      padding: 8px 16px;
+      border: 1px solid #333;
+      border-radius: 4px;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      cursor: pointer;
+      margin-right: 8px;
+      margin-bottom: 6px;
+      transition: all 0.15s;
+    }
+    button:hover { background: #252525; border-color: #555; }
+    button.primary { border-color: #f59e0b; color: #f59e0b; }
+    button.primary:hover { background: #1a1500; }
+    button.danger { border-color: #ef4444; color: #ef4444; }
+    button.danger:hover { background: #1a0505; }
+    button:disabled { opacity: 0.3; cursor: not-allowed; }
 
+    #log {
+      background: #0a0a0a;
+      border: 1px solid #222;
+      border-radius: 4px;
+      padding: 12px;
+      max-height: 500px;
+      overflow-y: auto;
+      font-size: 12px;
+      line-height: 1.8;
+    }
+    .log-entry { padding: 2px 0; border-bottom: 1px solid #111; }
+    .log-time { color: #555; }
+    .log-info { color: #60a5fa; }
+    .log-warn { color: #f59e0b; }
+    .log-error { color: #ef4444; }
+    .log-success { color: #34d399; }
+    .log-network { color: #c084fc; }
+
+    .status-bar {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .status-item {
+      font-size: 12px;
+    }
+    .status-item span { color: #555; }
+    .status-item strong { color: #e0e0e0; }
+
+    .instructions {
+      font-size: 12px;
+      color: #666;
+      border-left: 2px solid #333;
+      padding-left: 12px;
+      margin-bottom: 16px;
+    }
+    .instructions ol {
+      padding-left: 16px;
+    }
+    .instructions li {
+      margin-bottom: 4px;
+    }
+  </style>
 </head>
-
 <body>
 
-    <div>My Tests</div>
-    <div><a href="test1.html?param=other">Hide consent when visiting a url for the first time in the session. </a></div>
-    <div><a href="test2.html?param=other">Hide consent when one argument it's present but with Cookiebot.hide() </a></div>
-    <div><a href="test3.html">Implementing Cookiebot using google tag manager</a></div>
+  <h1>UC CMP — saveConsents() Analytics Event Test</h1>
+  <p class="subtitle">Ticket reproduction: does saveConsents() called programmatically trigger analytics event 4?</p>
+
+  <div class="panel">
+    <div class="panel-title">Test Instructions</div>
+    <div class="instructions">
+      <ol>
+        <li>Open browser DevTools → Network tab, filter by <strong>v2/e</strong> (analytics endpoint)</li>
+        <li>Click <strong>"Step 1"</strong> to initialize the CMP — give consent via the banner when it appears</li>
+        <li>Click <strong>"Step 2"</strong> to simulate the page reload behaviour (updateCategoriesConsents + saveConsents)</li>
+        <li>Check the log and Network tab — if event type 4 appears after Step 2, the hypothesis is confirmed</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Status</div>
+    <div class="status-bar">
+      <div class="status-item"><span>CMP Initialized: </span><strong id="status-init">—</strong></div>
+      <div class="status-item"><span>Consent Given: </span><strong id="status-consent">—</strong></div>
+      <div class="status-item"><span>Event 4 Fired After Step 2: </span><strong id="status-event4">—</strong></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="step-section">
+      <h3>Step 1 — Initial Consent (simulates first visit)</h3>
+      <p>Initializes CMP and shows the banner. Give consent normally (Accept All or custom choice).</p>
+      <button id="btn-step1" class="primary" onclick="step1()">Run Step 1: Show Banner & Give Consent</button>
     </div>
 
+    <div class="step-section">
+      <h3>Step 2 — Simulate Page Reload with Existing Consent</h3>
+      <p>Replicates customer flow: reads consent → updateCategoriesConsents() → saveConsents(). This is what they do on every page load when the cookie exists.</p>
+      <button id="btn-step2" class="primary" onclick="step2()" disabled>Run Step 2: updateCategoriesConsents + saveConsents</button>
+      <button id="btn-step2-update-only" onclick="step2UpdateOnly()" disabled>Run: updateCategoriesConsents ONLY (no save)</button>
+    </div>
+
+    <div class="step-section">
+      <h3>Utilities</h3>
+      <button onclick="clearAndReload()" class="danger">Clear Session & Reload</button>
+      <button onclick="document.getElementById('log').innerHTML = ''">Clear Log</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Event Log</div>
+    <div id="log"></div>
+  </div>
+
+  <!-- UC CMP Loader -->
+  <script>
+    window.UC_UI_SUPPRESS_CMP_DISPLAY = true;
+  </script>
+  <script id="usercentrics-cmp"
+    src="https://web.cmp.usercentrics.eu/ui/loader.js"
+    data-settings-id="9S0YpI7VSssd1D"
+    async>
+  </script>
+
+  <script>
+    const logEl = document.getElementById('log');
+    let networkEventCount = 0;
+    let event4AfterStep2 = false;
+    let step2Running = false;
+    let consentCategories = null;
+
+    function log(msg, type = 'info') {
+      const time = new Date().toLocaleTimeString('en-GB', { hour12: false });
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.innerHTML = `<span class="log-time">${time}</span> <span class="log-${type}">${msg}</span>`;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    // Intercept fetch to detect analytics calls
+    const originalFetch = window.fetch;
+    window.fetch = function(...args) {
+      const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
+      if (url.includes('/v2/e') || url.includes('graphql') || url.includes('/e?')) {
+        networkEventCount++;
+        let body = '';
+        if (args[1]?.body) {
+          try {
+            body = typeof args[1].body === 'string' ? args[1].body : JSON.stringify(args[1].body);
+            // Try to extract event type
+            const parsed = JSON.parse(body);
+            const eventType = parsed?.t || parsed?.type || parsed?.eventType || 'unknown';
+            log(`NETWORK [${networkEventCount}]: ${url.substring(0, 80)}... | event type: ${eventType}`, 'network');
+
+            if (step2Running && (eventType === 4 || eventType === '4')) {
+              event4AfterStep2 = true;
+              document.getElementById('status-event4').textContent = 'YES — CONFIRMED';
+              document.getElementById('status-event4').style.color = '#ef4444';
+              log('⚠ EVENT 4 DETECTED AFTER STEP 2 — saveConsents() triggers analytics!', 'error');
+            }
+          } catch (e) {
+            log(`NETWORK [${networkEventCount}]: ${url.substring(0, 80)}... | body parse failed`, 'network');
+          }
+        } else {
+          log(`NETWORK [${networkEventCount}]: ${url.substring(0, 80)}...`, 'network');
+        }
+      }
+      return originalFetch.apply(this, args);
+    };
+
+    // Also intercept XMLHttpRequest
+    const origOpen = XMLHttpRequest.prototype.open;
+    const origSend = XMLHttpRequest.prototype.send;
+    XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+      this._ucTestUrl = url;
+      return origOpen.apply(this, [method, url, ...rest]);
+    };
+    XMLHttpRequest.prototype.send = function(body) {
+      if (this._ucTestUrl && (this._ucTestUrl.includes('/v2/e') || this._ucTestUrl.includes('/e?'))) {
+        networkEventCount++;
+        let eventInfo = '';
+        if (body) {
+          try {
+            const parsed = JSON.parse(body);
+            eventInfo = ` | event type: ${parsed?.t || parsed?.type || 'unknown'}`;
+            if (step2Running && (parsed?.t === 4 || parsed?.t === '4')) {
+              event4AfterStep2 = true;
+              document.getElementById('status-event4').textContent = 'YES — CONFIRMED';
+              document.getElementById('status-event4').style.color = '#ef4444';
+              log('⚠ EVENT 4 DETECTED AFTER STEP 2 — saveConsents() triggers analytics!', 'error');
+            }
+          } catch(e) {}
+        }
+        log(`XHR [${networkEventCount}]: ${this._ucTestUrl.substring(0, 80)}...${eventInfo}`, 'network');
+      }
+      return origSend.apply(this, [body]);
+    };
+
+    // Listen for CMP events
+    window.addEventListener('UC_UI_INITIALIZED', () => {
+      log('UC_UI_INITIALIZED event received', 'success');
+      document.getElementById('status-init').textContent = 'Yes';
+      document.getElementById('status-init').style.color = '#34d399';
+    });
+
+    window.addEventListener('UC_UI_CMP_EVENT', (e) => {
+      const detail = e.detail || {};
+      log(`UC_UI_CMP_EVENT: type=${detail.type}, event=${detail.event}, source=${detail.source || '?'}`, 'warn');
+    });
+
+    // Step 1: Show banner, let user consent
+    async function step1() {
+      log('--- STEP 1: INITIAL CONSENT ---', 'warn');
+      try {
+        const initialized = await window.__ucCmp.isInitialized();
+        log(`isInitialized: ${initialized}`, 'info');
+
+        if (initialized) {
+          log('Calling showFirstLayer()...', 'info');
+          await window.__ucCmp.showFirstLayer();
+          log('Banner shown — please give consent via the banner UI', 'info');
+        } else {
+          log('CMP not initialized yet — waiting for UC_UI_INITIALIZED...', 'warn');
+          window.addEventListener('UC_UI_INITIALIZED', async () => {
+            log('Now initialized, calling showFirstLayer()...', 'info');
+            await window.__ucCmp.showFirstLayer();
+            log('Banner shown — please give consent via the banner UI', 'info');
+          }, { once: true });
+        }
+
+        // Listen for consent event to capture categories
+        window.addEventListener('UC_CONSENT', async (e) => {
+          log(`UC_CONSENT event received`, 'success');
+          document.getElementById('status-consent').textContent = 'Yes';
+          document.getElementById('status-consent').style.color = '#34d399';
+
+          // Get current consent details to use in Step 2
+          const details = await window.__ucCmp.getConsentDetails();
+          consentCategories = details.categories?.map(cat => ({
+            id: cat.categorySlug || cat.id,
+            consent: cat.isConsented || false
+          })) || [];
+          log(`Captured ${consentCategories.length} category consents: ${JSON.stringify(consentCategories)}`, 'info');
+
+          // Enable Step 2
+          document.getElementById('btn-step2').disabled = false;
+          document.getElementById('btn-step2-update-only').disabled = false;
+        }, { once: true });
+
+      } catch (err) {
+        log(`Step 1 error: ${err.message}`, 'error');
+      }
+    }
+
+    // Step 2: Simulate reload — updateCategoriesConsents + saveConsents
+    async function step2() {
+      log('--- STEP 2: SIMULATE RELOAD (update + save) ---', 'warn');
+      log('Monitoring for event 4...', 'info');
+      step2Running = true;
+      event4AfterStep2 = false;
+
+      try {
+        log(`Calling updateCategoriesConsents(${JSON.stringify(consentCategories)})...`, 'info');
+        await window.__ucCmp.updateCategoriesConsents(consentCategories);
+        log('updateCategoriesConsents completed', 'success');
+
+        log('Calling saveConsents()...', 'info');
+        await window.__ucCmp.saveConsents();
+        log('saveConsents completed', 'success');
+
+        // Wait a bit for async network calls
+        await new Promise(r => setTimeout(r, 2000));
+
+        if (!event4AfterStep2) {
+          document.getElementById('status-event4').textContent = 'No (check Network tab)';
+          document.getElementById('status-event4').style.color = '#f59e0b';
+          log('No event 4 detected in intercepted calls — check Network tab manually for confirmation', 'warn');
+        }
+      } catch (err) {
+        log(`Step 2 error: ${err.message}`, 'error');
+      } finally {
+        step2Running = false;
+      }
+    }
+
+    // Step 2 variant: only updateCategoriesConsents, no save
+    async function step2UpdateOnly() {
+      log('--- STEP 2 VARIANT: UPDATE ONLY (no save) ---', 'warn');
+      step2Running = true;
+      event4AfterStep2 = false;
+
+      try {
+        log(`Calling updateCategoriesConsents(${JSON.stringify(consentCategories)})...`, 'info');
+        await window.__ucCmp.updateCategoriesConsents(consentCategories);
+        log('updateCategoriesConsents completed', 'success');
+
+        await new Promise(r => setTimeout(r, 2000));
+
+        if (!event4AfterStep2) {
+          log('No event 4 detected — updateCategoriesConsents alone does not trigger analytics', 'success');
+        }
+      } catch (err) {
+        log(`Step 2 variant error: ${err.message}`, 'error');
+      } finally {
+        step2Running = false;
+      }
+    }
+
+    // Clear and reload
+    async function clearAndReload() {
+      log('Clearing session...', 'warn');
+      try {
+        await window.__ucCmp.clearUserSession();
+      } catch(e) {}
+      // Also clear cookies
+      document.cookie.split(';').forEach(c => {
+        document.cookie = c.replace(/^ +/, '').replace(/=.*/, '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/');
+      });
+      localStorage.clear();
+      location.reload();
+    }
+
+    log('Page loaded. CMP loading with UC_UI_SUPPRESS_CMP_DISPLAY = true', 'info');
+    log('Settings ID: 9S0YpI7VSssd1D', 'info');
+    log('Ready — click Step 1 to begin.', 'info');
+  </script>
 
 </body>
-
 </html>
